@@ -1,0 +1,77 @@
+apply plugin: 'com.android.library'
+ext.unionads_version = ""
+ext.sdk_dist = "../../../sdk-dist"
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        minSdkVersion 11
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: '../libs', include: ['*.jar'])
+    compile 'com.ucweb.union.ads:unionads:2.1.4.122'
+    testCompile 'junit:junit:4.12'
+}
+
+def now() {
+    return new Date().format('yyyyMMddhhmmss')
+}
+
+task cleanDist() {
+    def dist = file("../../../sdk-dist")
+    if (dist.exists()) {
+        dist.deleteDir()
+    }
+}
+
+
+task copyReleaseJar(type: Copy) {
+    from 'build/intermediates/bundles/release/classes.jar'
+    into sdk_dist + "/libs"
+    rename { String fileName ->
+        fileName.replace('classes', 'unionads-wrapper-' + unionads_version)
+    }
+}
+
+task copyDependencies << {
+    configurations.compile.each {
+        String fileName = it.getName();
+        int pos = fileName.indexOf('unionads');
+        if (pos >= 0) {
+            unionads_version = fileName.replace('unionads-', '');
+            unionads_version = unionads_version.replace('.jar', '');
+            String src = it.getAbsolutePath();
+            copy {
+                from src
+                into sdk_dist + "/libs"
+            }
+        }
+    }
+}
+
+task buildSdk() {
+
+}
+//cleanDist->buildNative->build->copyDependencies->copyReleaseJar->buildSdk
+build.dependsOn cleanDist
+copyDependencies.dependsOn build
+copyReleaseJar.dependsOn copyDependencies
+buildSdk.dependsOn copyReleaseJar
+
+build.mustRunAfter cleanDist
+copyDependencies.mustRunAfter build
+copyReleaseJar.mustRunAfter copyDependencies
+buildSdk.mustRunAfter copyReleaseJar
