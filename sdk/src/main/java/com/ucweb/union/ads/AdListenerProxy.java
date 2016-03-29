@@ -1,7 +1,5 @@
 package com.ucweb.union.ads;
 
-import android.util.Log;
-
 public class AdListenerProxy implements AdListener {
   private final long mNativePtr;
 
@@ -20,7 +18,7 @@ public class AdListenerProxy implements AdListener {
   }
 
   @Override
-  public void onAdOpened(UnionAd unionAd) {
+  public void onAdShowed(UnionAd unionAd) {
     nativeOnAdOpened(mNativePtr);
   }
 
