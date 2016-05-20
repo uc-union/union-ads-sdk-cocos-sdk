@@ -12,8 +12,9 @@ NativeAdAsset(jobject javaObj) {
   mJavaObj.Reset(javaObj);
 }
 const std::string& getTitle() const{
-  ScopedJniMethodInfo info;
-  JniMethodInfo_& rawInfo = info.get();
+  if(mTitle.empty()) {
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
     if( JniHelper::getMethodInfo(rawInfo
                                    , "com.ucweb.union.ads.NativeAdAssets"
                                    , "getTitle"
@@ -23,56 +24,158 @@ const std::string& getTitle() const{
     } else {
         LOGE("Failed to get method NativeAdImpl.NativeAdImpl!");
     }
-    return mTitle;
+  }
+  return mTitle;
 }
 const std::string& getDescrption() const{
-  ScopedJniMethodInfo info;
-  JniMethodInfo_& rawInfo = info.get();
+  if(mDescription.empty()) {
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
     if( JniHelper::getMethodInfo(rawInfo
                                    , "com.ucweb.union.ads.NativeAdAssets"
                                    , "getDescription"
                                    , "()Ljava/lang/String;")) {
        jstring ret = (jstring)rawInfo.env->CallObjectMethod(mJavaObj.get(), rawInfo.methodID);
-       mTitle = JniHelper::jstring2string(ret);
+       mDescription = JniHelper::jstring2string(ret);
     } else {
         LOGE("Failed to get method NativeAdImpl.NativeAdImpl!");
     }
-    return mTitle;
+  }
+    return mDescription;
 }
 const std::string& getIconUrl() const{
-  ScopedJniMethodInfo info;
-  JniMethodInfo_& rawInfo = info.get();
+  if(mIconUrl.empty()) {
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
     if( JniHelper::getStaticMethodInfo(rawInfo
                                    , "com.ucweb.union.ads.NativeAdImpl"
                                    , "getIconUrl"
                                    , "(Lcom/ucweb/union/ads/NativeAdAssets;)Ljava/lang/String;")) {
        jstring ret = (jstring)rawInfo.env->CallStaticObjectMethod(rawInfo.classID, rawInfo.methodID, mJavaObj.get());
-       mTitle = JniHelper::jstring2string(ret);
+       mIconUrl = JniHelper::jstring2string(ret);
     } else {
         LOGE("Failed to get method NativeAdImpl.getIconUrl!");
     }
-    return mTitle;
+  }
+  return mIconUrl;
 }
-const std::string& getCoverUrl() const{
-  ScopedJniMethodInfo info;
-  JniMethodInfo_& rawInfo = info.get();
+const std::vector<Image>& getCovers() const {
+  if(mCovers.empty()){
+    int count = getCoverCount();
+    for(int i = 0;i < count; ++i) {
+      mCovers.push_back(getCoverAt(i));
+    }
+  }
+  return mCovers;
+}
+const Image filterImageBySize(int width, int height) const {
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
     if( JniHelper::getStaticMethodInfo(rawInfo
                                    , "com.ucweb.union.ads.NativeAdImpl"
-                                   , "getCoverUrl"
-                                   , "(Lcom/ucweb/union/ads/NativeAdAssets;)Ljava/lang/String;")) {
-       jstring ret = (jstring)rawInfo.env->CallStaticObjectMethod(rawInfo.classID, rawInfo.methodID, mJavaObj.get());
-       mTitle = JniHelper::jstring2string(ret);
+                                   , "filterImageBySize"
+                                   , "(Lcom/ucweb/union/ads/NativeAdAssets;II)Lcom/ucweb/union/ads/NativeAdAssets$Image;")) {
+       jobject obj = rawInfo.env->CallStaticObjectMethod(rawInfo.classID, rawInfo.methodID, mJavaObj.get(), width, height);
+       if(obj) {
+         int w = getImageWidth(obj);
+         int h = getImageHeight(obj);
+         const std::string& imageUrl = getImageUrl(obj);
+         return Image(w, h, imageUrl);
+       }
+       else{
+         LOGE("Filter no img match specified size!");
+       }
     } else {
-        LOGE("Failed to get method NativeAdImpl.getCoverUrl!");
+        LOGE("Failed to get method NativeAdImpl.getCoverCount!");
     }
-    return mTitle;
+    return Image();
 }
+private:
+  int getCoverCount() const{
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
+    if( JniHelper::getStaticMethodInfo(rawInfo
+                                   , "com.ucweb.union.ads.NativeAdImpl"
+                                   , "getCoverCount"
+                                   , "(Lcom/ucweb/union/ads/NativeAdAssets;)I")) {
+       return rawInfo.env->CallStaticIntMethod(rawInfo.classID, rawInfo.methodID, mJavaObj.get());
+    } else {
+        LOGE("Failed to get method NativeAdImpl.getCoverCount!");
+    }
+    return 0;
+  }
+  Image getCoverAt(int index) const{
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
+    if( JniHelper::getStaticMethodInfo(rawInfo
+                                   , "com.ucweb.union.ads.NativeAdImpl"
+                                   , "getCoverAt"
+                                   , "(Lcom/ucweb/union/ads/NativeAdAssets;I)Lcom/ucweb/union/ads/NativeAdAssets$Image;")) {
+       jobject obj =  rawInfo.env->CallStaticObjectMethod(rawInfo.classID, rawInfo.methodID, mJavaObj.get(), index);
+       if(obj) {
+         int w = getImageWidth(obj);
+         int h = getImageHeight(obj);
+         const std::string& imageUrl = getImageUrl(obj);
+         return Image(w, h, imageUrl);
+       }
+       else{
+         LOGE("invalid img!");
+       }
+    } else {
+        LOGE("Failed to get method NativeAdImpl.getCoverAt!");
+    }
+    return Image();
+  }
+
+  static int getImageWidth(jobject javaImg) {
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
+    if( JniHelper::getMethodInfo(rawInfo
+                                   , "com/ucweb/union/ads/NativeAdAssets$Image"
+                                   , "getWidth"
+                                   , "()I")) {
+       return rawInfo.env->CallIntMethod(javaImg, rawInfo.methodID);
+    } else {
+        LOGE("Failed to get method Image.getWidth!");
+    }
+    return 0;
+  }
+
+  static int getImageHeight(jobject javaImg) {
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
+    if( JniHelper::getMethodInfo(rawInfo
+                                   , "com/ucweb/union/ads/NativeAdAssets$Image"
+                                   , "getHeight"
+                                   , "()I")) {
+       return rawInfo.env->CallIntMethod(javaImg, rawInfo.methodID);
+    } else {
+        LOGE("Failed to get method Image.getHeight!");
+    }
+    return 0;
+  }
+
+  static std::string getImageUrl(jobject javaImg) {
+    ScopedJniMethodInfo info;
+    JniMethodInfo_& rawInfo = info.get();
+    if( JniHelper::getMethodInfo(rawInfo
+                                   , "com/ucweb/union/ads/NativeAdAssets$Image"
+                                   , "getUrl"
+                                   , "()Ljava/lang/String;")) {
+       jstring url =  (jstring)rawInfo.env->CallObjectMethod(javaImg, rawInfo.methodID);
+       return JniHelper::jstring2string(url);
+    } else {
+        LOGE("Failed to get method Image.getUrl!");
+    }
+    return "";
+  }
 private:
   ScopedJavaGlobalRef mJavaObj;
   mutable std::string mTitle;
   mutable std::string mDescription;
   mutable std::string mIconUrl;
   mutable std::string mCoverUrl;
+  mutable std::vector<Image> mCovers;
 };
 
 }//namespace
@@ -151,8 +254,11 @@ const std::string& getDescription() const{
 const std::string& getIconUrl() const{
   return mNativeAdAssets->getIconUrl();
 }
-const std::string& getCoverUrl() const{
-  return mNativeAdAssets->getCoverUrl();
+const std::vector<Image>& getCovers() const {
+  return mNativeAdAssets->getCovers();
+}
+const Image filterImageBySize(int width, int height) const {
+  return mNativeAdAssets->filterImageBySize(width, height);
 }
 
 void onLoaded() {
@@ -247,7 +353,10 @@ const std::string& NativeAd::getDescription() const{
 const std::string& NativeAd::getIconUrl() const{
   return mImpl->getIconUrl();
 }
-const std::string& NativeAd::getCoverUrl() const{
-  return mImpl->getCoverUrl();
+const std::vector<Image>& NativeAd::getCovers() const {
+ return mImpl->getCovers();
+}
+const Image NativeAd::filterImageBySize(int width, int height) const {
+ return mImpl->filterImageBySize(width, height);  
 }
 }//com_ucweb_union_ads_sdk
