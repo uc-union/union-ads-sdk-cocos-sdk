@@ -3,6 +3,8 @@ package com.ucweb.union.ads;
 import android.app.Activity;
 import android.content.Context;
 
+import java.util.List;
+
 /**
  * Created by wangli on 1/18/16.
  */
@@ -36,10 +38,28 @@ public class NativeAdImpl extends NativeAd {
     return assets.getIcon().getUrl();
   }
 
-  public static String getCoverUrl(NativeAdAssets assets) {
-    if (assets.getCover() == null) {
-      return "";
+  public static int getCoverCount(NativeAdAssets assets) {
+    List<NativeAdAssets.Image> covers = assets.getCovers();
+    if (covers == null) {
+      return 0;
     }
-    return assets.getCover().getUrl();
+    return covers.size();
+  }
+
+  public static NativeAdAssets.Image getCoverAt(NativeAdAssets assets, int index) {
+    List<NativeAdAssets.Image> covers = assets.getCovers();
+    if (covers == null) {
+      return null;
+    }
+    if (index >= covers.size()) {
+      return null;
+    }
+    return covers.get(index);
+  }
+
+  public static NativeAdAssets.Image filterImageBySize(NativeAdAssets assets,
+                                                       int width,
+                                                       int height) {
+    return ImageFilter.filter(assets.getCovers(), width, height);
   }
 }
