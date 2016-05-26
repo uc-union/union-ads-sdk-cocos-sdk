@@ -32,6 +32,13 @@ public class BannerAdViewImpl extends BannerAdView {
   private int mW;
   private int mH;
 
+  public void setShowPosition(int x, int y){
+    mX = x;
+    mY = y;
+    mW = LayoutParams.WRAP_CONTENT;
+    mH = LayoutParams.WRAP_CONTENT;
+  }
+
   public void setShowRect(int x, int y, int w, int h) {
     mX = x;
     mY = y;

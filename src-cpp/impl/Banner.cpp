@@ -38,6 +38,18 @@ void setShowRect(int x, int y, int w, int h) {
         LOGE("Failed to get method BannerAdViewImpl.setShowRect!");
     }
 }
+void setShowPosition(int x, int y) {
+  ScopedJniMethodInfo info;
+  JniMethodInfo_& rawInfo = info.get();
+    if( JniHelper::getMethodInfo(rawInfo
+                                   , "com.ucweb.union.ads.BannerAdViewImpl"
+                                   , "setShowPosition"
+                                   , "(II)V")) {
+        rawInfo.env->CallVoidMethod(mJavaBanner.get(), rawInfo.methodID, x, y);
+    } else {
+        LOGE("Failed to get method BannerAdViewImpl.setShowPosition!");
+    }
+}
 void show() {
     ScopedJniMethodInfo info;
     JniMethodInfo_& rawInfo = info.get();
@@ -108,6 +120,10 @@ void Banner::show()
 void Banner::setShowRect(int x, int y, int w, int h)
 {
   mImpl->setShowRect(x, y, w, h);
+}
+void Banner::setShowPosition(int x, int y)
+{
+  mImpl->setShowPosition(x, y);
 }
 //should be a weak reference
 void Banner::setListener(AdListener* listener){

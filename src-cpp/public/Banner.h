@@ -12,6 +12,7 @@ namespace com_ucweb_union_ads_sdk{
 		Banner();
 	 	~Banner();
         void setShowRect(int x, int y, int w, int h);
+        void setShowPosition(int x, int y);
         void show();
         void setListener(AdListener* listener) override;
         void load(const AdRequest& request) override;
